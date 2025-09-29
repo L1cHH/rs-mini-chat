@@ -22,21 +22,39 @@ impl TcpConnectionWriter {
         loop {
             match self.rx.recv().await {
                 Ok(msg) => {
+                    let msg_len = msg.len() as u32;
+                    let len_bytes = msg_len.to_be_bytes();
                     if let Err(_) = self
                         .socket_writer
-                        .write_all(format!("You received a new message: {}", msg).as_bytes())
+                        .write_all(&len_bytes)
+                        .await { break }
+                    if let Err(_) = self
+                        .socket_writer
+                        .write_all(msg.as_bytes())
                         .await { break }
                 },
                 Err(tokio::sync::broadcast::error::RecvError::Closed) => {
+                    let msg = b"Server is closed... So try later!";
+                    let msg_len = msg.len() as u32;
                     if let Err(_) = self
                         .socket_writer
-                        .write_all(b"Server is closed... So try later!")
+                        .write_all(&msg_len.to_be_bytes())
+                        .await { break }
+                    if let Err(_) = self
+                        .socket_writer
+                        .write_all(msg)
                         .await { break }
                 },
-                Err(tokio::sync::broadcast::error::RecvError::Lagged(missed)) => {
+                Err(tokio::sync::broadcast::error::RecvError::Lagged(_)) => {
+                    let msg = b"Connection is lagging... You have missed some messages";
+                    let msg_len = msg.len() as u32;
                     if let Err(_) = self
                         .socket_writer
-                        .write_all(format!("Connection is lagging... You have missed {}", missed.to_string()).as_bytes())
+                        .write_all(&msg_len.to_be_bytes())
+                        .await { break }
+                    if let Err(_) = self
+                        .socket_writer
+                        .write_all(msg)
                         .await { break }
                 }
             }
