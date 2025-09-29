@@ -1,28 +1,6 @@
 use std::ops::Add;
+use crate::config::ServerConfig;
 use crate::connection::{TcpConnectionReader, TcpConnectionWriter};
-
-pub struct ServerConfig {
-    addr: String,
-    port: u32
-}
-
-impl Default for ServerConfig {
-    fn default() -> Self {
-        ServerConfig {
-            addr: "0.0.0.0".to_string(),
-            port: 8080
-        }
-    }
-}
-
-impl ServerConfig {
-    pub fn new(addr: String, port: u32) -> Self {
-        ServerConfig {
-            addr,
-            port
-        }
-    }
-}
 
 pub async fn init_server(server_config: ServerConfig) {
     let str_port = server_config.port.to_string();
@@ -30,7 +8,7 @@ pub async fn init_server(server_config: ServerConfig) {
         .add(":")
         .add(str_port.as_str());
 
-    println!("Server is building on address: {}", full_address);
+    println!("Server is building on address: {}...", full_address);
 
     let tcp_listener = match tokio::net::TcpListener::bind(full_address).await {
         Ok(tcp) => tcp,
